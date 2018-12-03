@@ -94,23 +94,31 @@ class commandThread(threading.Thread):
 
     def run(self):
         lctx.debug(self.cmd)
-        ca = self.cmd.split(" ")
-        lctx.debug(ca)
-	p = subprocess.Popen(ca, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.cwd, preexec_fn=os.setsid)
-	exec_script_lock.acquire()
-        exec_script_pid[self.testid] = p
-        exec_script_lock.release()
-        while True:
-            out = p.stdout.read(1)
-            if out == '' and p.poll() is not None:
-                break
-            if out != '':
-                sys.stdout.write(out)
-                sys.stdout.flush()
+        if self.dcmd == "DAYTONA_START_TEST" :
+            ca = self.cmd.split(" ")
+            lctx.debug(ca)
+            p = subprocess.Popen(ca, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd)
+            self.stdout, self.stderr = p.communicate()
+            while True:
+                out = p.stdout.read(1)
+                if out == '' and p.poll() != None:
+                    break
+                if out != '':
+                    sys.stdout.write(out)
+                    sys.stdout.flush()
+                    if self.sfile is not None:
+                        self.sfile.flush()
+            for i in range(0, 15):
+                print "-----------------------------------------------------------------------"
+                time.sleep(1)
                 if self.sfile is not None:
                     self.sfile.flush()
+         else:
+             ca = self.cmd.split(" ")
+             lctx.debug(ca)
+             p = subprocess.Popen(ca, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+             self.stdout, self.stderr = p.communicate()
 
-        self.sfile.flush()
 
 def get_test(testid):
     found = False
@@ -213,7 +221,7 @@ def exec_cmd(cmd, daytona_cmd, sync, obj, actionid, current_test):
                 lctx.debug("Callback here removing item")
                 obj.removeActionItem(actionid)
                 break
-            time.sleep(3)
+            time.sleep(5)
 
     if daytona_cmd == "DAYTONA_START_TEST":
         # todo : verify the TEST END on filesystem OR Failure
