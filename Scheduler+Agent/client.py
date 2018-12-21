@@ -82,10 +82,7 @@ class TCPClient ():
       # raise CommunicationError("ERROR:" + ip + "," +  "could not send file : " + filename)
     finally:
       self.lctx.debug("closing sock")
-      try:
-        sock.shutdown(socket.SHUT_RDWR)
-      except:
-        pass
+      sock.shutdown(socket.SHUT_RDWR)
       sock.close()
     return
 
@@ -95,22 +92,19 @@ class TCPClient ():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     response = None
     try:
-      sock.settimeout(5)
+      #sock.settimeout(5)
       sock.connect((ip, port))
       sock.sendall(message)
       response = sock.recv(8192)
       self.lctx.debug("Received: {}".format(response))
       #todo : based on response actionID expect more and loop
-      #if actionID is null the exec of this cmd has ended 
+      #if actionID is null the exec of this cmd has ended
     except IOError:
       self.lctx.error("Server not responding, perhaps server not running")
       self.lctx.error("Could not send message to " + ip + ":" + str(port)+ "," +  message)
       # raise CommunicationError("ERROR:" + ip + "," +  message)
     finally:
       self.lctx.debug("closing sock")
-      try:
-        sock.shutdown(socket.SHUT_RDWR)
-      except:
-        pass
+      sock.shutdown(socket.SHUT_RDWR)
       sock.close()
     return response
