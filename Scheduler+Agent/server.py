@@ -45,14 +45,26 @@ class ActionCaller:
         module = self.conf.actionMap[command.strip()].split(".")[0]
         function = self.conf.actionMap[command.strip()].split(".")[1]
         sync = self.conf.actionMap[command.strip()].split(".")[2]
+        self.lctx.debug(command)
+        self.lctx.debug(paramcsv)
+        self.lctx.debug(actionID)
+
 
         t2 = testobj.testDefn()
-	if command == "DAYTONA_START_TEST":
+        if command == "DAYTONA_START_TEST":
             testid = int(paramcsv.split(",")[0])
             hosttype = paramcsv.split(",")[1]
             current_test = action.get_test(testid)
             if current_test:
                 t2 = current_test.tobj
+        if command == "DAYTONA_FILE_DOWNLOAD":
+            testid = int(paramcsv.split(",")[3])
+            hosttype = paramcsv.split(",")[1]
+            current_test = action.get_test(testid)
+            if current_test:
+                t2 = current_test.tobj
+
+        # ???? TRY_FIX t2.deserialize(tst)
 
         m = __import__ (module)
         f = getattr(m,function)
@@ -119,8 +131,15 @@ class serv:
 
             if cmd == "DAYTONA_HANDSHAKE":
                 # todo : maintain a list of daytona host that this server talks to only respond to the ones in the list
+                serv.registered_hosts[host] = host
+                addr = socket.gethostbyname(host)
+                serv.registered_hosts[addr] = addr
 
                 p = params.split(",")
+                action.current_test.serverip = p[1]
+                action.current_test.serverport = int(p[2])
+                action.current_test.status = "TESTSETUP"
+
                 if p[0] == "handshake1":
                     serv.registered_hosts[host] = host
                     addr = socket.gethostbyname(host)
@@ -133,7 +152,7 @@ class serv:
                     current_test.testid = int(p[3])
                     current_test.serverport = int(p[2])
                     current_test.status = "SETUP"
-		    test_logger = LOG.init_testlogger(current_test,"STAT")
+                    test_logger = LOG.init_testlogger(current_test,"STAT")
                     if test_logger:
                         current_test.agent_log_file = test_logger.handlers[0].baseFilename
 
@@ -143,10 +162,10 @@ class serv:
                         action.running_tests[int(p[3])] = current_test
                         action.action_lock.release()
                         response = "{}".format("SUCCESS")
-			test_logger.info("Handshake successfull with daytona host : " + current_test.serverip)
+                        test_logger.info("Handshake successfull with daytona host : " + current_test.serverip)
                     else:
                         response = "{}".format("ERROR")
-			test_logger.error("Handshake failed with daytona host : " + current_test.serverip)
+                        test_logger.error("Handshake failed with daytona host : " + current_test.serverip)
 
                     self.request.sendall(response)
                     return
