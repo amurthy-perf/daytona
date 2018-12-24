@@ -118,6 +118,7 @@ class serv:
 
         def handle(self):
             host = self.client_address[0]
+            serv.lctx.info("Handler code : host is " + str(host))
             data = self.request.recv(8192)
             cur_thread = threading.current_thread()
             ev = data.split(":")
@@ -131,6 +132,7 @@ class serv:
 
             if cmd == "DAYTONA_HANDSHAKE":
                 # todo : maintain a list of daytona host that this server talks to only respond to the ones in the list
+                serv.lctx.debug("Handling HANDSHAKE")
                 serv.registered_hosts[host] = host
                 addr = socket.gethostbyname(host)
                 serv.registered_hosts[addr] = addr
@@ -141,6 +143,7 @@ class serv:
                 action.current_test.status = "TESTSETUP"
 
                 if p[0] == "handshake1":
+                    serv.lctx.debug("HANDSHAKE type is handshake1")
                     serv.registered_hosts[host] = host
                     addr = socket.gethostbyname(host)
                     serv.registered_hosts[addr] = addr
@@ -152,21 +155,27 @@ class serv:
                     current_test.testid = int(p[3])
                     current_test.serverport = int(p[2])
                     current_test.status = "SETUP"
+                    serv.lctx.debug("current_test object attributes initiated")
                     test_logger = LOG.init_testlogger(current_test,"STAT")
                     if test_logger:
                         current_test.agent_log_file = test_logger.handlers[0].baseFilename
 
                     con = action.scheduler_handshake(current_test)
+                    response = "{}".format("INIT HANDSHAKE")
                     if con:
                         action.action_lock.acquire()
                         action.running_tests[int(p[3])] = current_test
                         action.action_lock.release()
                         response = "{}".format("SUCCESS")
                         test_logger.info("Handshake successfull with daytona host : " + current_test.serverip)
+                        serv.lctx.info("Handshake successfull with daytona host : " + current_test.serverip)
                     else:
                         response = "{}".format("ERROR")
                         test_logger.error("Handshake failed with daytona host : " + current_test.serverip)
+                        serv.lctx.error("Handshake failed with daytona host : " + current_test.serverip)
 
+                    #force success response = "{}".format("SUCCESS")
+                    serv.lctx.debug("sending response : " + response)
                     self.request.sendall(response)
                     return
                 else:
@@ -175,6 +184,7 @@ class serv:
                     return
 
             if host in serv.registered_hosts.keys() or cmd in ("DAYTONA_HEARTBEAT", "DAYTONA_CLI"):
+                serv.lctx.debug("host ip present in registerd hosts")
                 if cmd == "DAYTONA_STREAM_END":
                     serv.lctx.debug("End stream...")
                     return

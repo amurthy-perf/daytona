@@ -247,7 +247,9 @@ def log(self, *args):
 def scheduler_handshake(current_test):
     cl = client.TCPClient(LOG.getLogger("clientlog", "Agent"))
     env = envelope.DaytonaEnvelope()
+    lctx.debug("Sending handshake2 to " + current_test.serverip)
     ret = cl.send(current_test.serverip, current_test.serverport, env.construct("DAYTONA_HANDSHAKE", "handshake2"))
+    lctx.debug("Response to Handshake2 : " + ret)
     if ret == "SUCCESS":
         return True
     else:
